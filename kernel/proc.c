@@ -289,6 +289,8 @@ fork(void)
   }
   np->sz = p->sz;
 
+  // copy trace mask from parent to child
+  np -> mask = p -> mask;
   // copy saved user registers.
   *(np->trapframe) = *(p->trapframe);
 
@@ -653,4 +655,16 @@ procdump(void)
     printf("%d %s %s", p->pid, state, p->name);
     printf("\n");
   }
+}
+
+// Return the number of processes 
+// the system is using 
+uint64
+proccount(void){
+	uint64 count=0;
+	for(int i=0; i < NPROC;i++){
+		if(proc[i].state != UNUSED) 
+			count ++;
+	}
+	return count;
 }
