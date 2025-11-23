@@ -1,3 +1,6 @@
+// Function decleration
+uint64 proccount(void);
+
 // Saved registers for kernel context switches.
 struct context {
   uint64 ra;
@@ -105,4 +108,5 @@ struct proc {
   struct file *ofile[NOFILE];  // Open files
   struct inode *cwd;           // Current directory
   char name[16];               // Process name (debugging)
+  int mask;                    // The mask used for the trace system call 
 };
