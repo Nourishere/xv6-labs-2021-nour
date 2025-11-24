@@ -449,3 +449,33 @@ copyinstr(pagetable_t pagetable, char *dst, uint64 srcva, uint64 max)
     return -1;
   }
 }
+
+// print the process page table tree
+void
+vmprint(pagetable_t pagetable)
+{
+	static uint8 depth = 0, start = 0;
+	if(start == 0){
+		printf("page table %p\n", pagetable);
+		start = 1;
+	}
+	for(int i = 0; i < 512; i++){	
+		pte_t pte = pagetable[i];	
+		if((pte & PTE_V) && (pte & (PTE_X | PTE_R | PTE_W)) == 0){
+			/* Non-leaf entry, points at next level */
+			depth += 1;
+			for(int j = 0; j < depth - 1; j++)
+				printf(".. ");
+			printf("..");
+			printf("%d: pte %p pa %p\n", i, pte, PTE2PA(pte));
+			vmprint((pagetable_t) PTE2PA(pte));	
+			depth -= 1;
+		}
+		else if(pte & PTE_V){
+			/* points to physial memory */
+			printf(".. .. ..%d: pte %p pa %p\n", i, pte, PTE2PA(pte));
+		}
+		else
+			continue;
+	}
+}
