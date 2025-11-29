@@ -1,0 +1,10 @@
+a1
+line 48
+line 20
+1544+ra
+40
+He110 World
+0x726c6400
+no
+because a1 is garbage
+
