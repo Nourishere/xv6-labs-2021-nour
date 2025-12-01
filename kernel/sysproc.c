@@ -96,3 +96,49 @@ sys_uptime(void)
   release(&tickslock);
   return xticks;
 }
+
+// alarm the user of usage after a specified time
+uint64
+sys_sigalarm(void)
+{
+  struct proc* p = myproc();
+  // fetch arguments
+  if(argint(0, &(p->alarm_ticks)) < 0)
+    return -1;
+  if(argaddr(1, &(p->alarm_handler)) < 0)
+    return -1;
+  return 0;
+}
+
+uint64
+sys_sigreturn(void){
+    struct proc* p = myproc();
+	// restore saved registers
+	p->trapframe->epc = p->saved_epc;
+	p->trapframe->a0  = p->reg[1];
+	p->trapframe->a1  = p->reg[2];
+	p->trapframe->a2  = p->reg[3];
+	p->trapframe->a3  = p->reg[4];
+	p->trapframe->a4  = p->reg[5];
+	p->trapframe->a5  = p->reg[6];
+	p->trapframe->a6  = p->reg[7];
+	p->trapframe->a7  = p->reg[8];
+	p->trapframe->ra  = p->reg[9];
+	p->trapframe->sp  = p->reg[10];
+	p->trapframe->s0  = p->reg[11];
+	p->trapframe->s1  = p->reg[12];
+	p->trapframe->s2  = p->reg[13];
+	p->trapframe->s3  = p->reg[14];
+	p->trapframe->s4  = p->reg[15];
+	p->trapframe->s5  = p->reg[16];
+	p->trapframe->s6  = p->reg[17];
+	p->trapframe->s7  = p->reg[18];
+	p->trapframe->s8  = p->reg[19];
+	p->trapframe->s9  = p->reg[20];
+	p->trapframe->s10 = p->reg[21];
+	p->trapframe->s11 = p->reg[22];
+
+	// free the flag for another interrupt
+	p->alarmflag = 1;
+	return 0;
+}
