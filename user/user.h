@@ -26,6 +26,8 @@ int sleep(int);
 int uptime(void);
 int trace(unsigned int mask);
 int sysinfo(struct sysinfo *);
+int sigalarm(int ticks, void (*handler)());
+int sigreturn(void);
 
 // ulib.c
 int stat(const char*, struct stat*);
