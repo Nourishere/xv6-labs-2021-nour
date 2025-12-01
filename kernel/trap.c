@@ -77,9 +77,43 @@ usertrap(void)
     exit(-1);
 
   // give up the CPU if this is a timer interrupt.
-  if(which_dev == 2)
-    yield();
+  if(which_dev == 2){
+    // another tick
+	p->alarm_accticks ++;
+	if(p->alarm_accticks == p->alarm_ticks && p->alarm_ticks > 0 && p->alarmflag){
+		// save the epc and registers
+		p->saved_epc = p->trapframe->epc;
+		p->reg[1]  = p->trapframe->a0;
+		p->reg[2]  = p->trapframe->a1;
+		p->reg[3]  = p->trapframe->a2;
+		p->reg[4] = p->trapframe->a3;
+		p->reg[5] = p->trapframe->a4;
+		p->reg[6] = p->trapframe->a5;
+		p->reg[7] = p->trapframe->a6;
+		p->reg[8] = p->trapframe->a7;
+		p->reg[9] = p->trapframe->ra;
+		p->reg[10] = p->trapframe->sp;
+		p->reg[11] = p->trapframe->s0;
+		p->reg[12] = p->trapframe->s1;
+		p->reg[13] = p->trapframe->s2;
+		p->reg[14] = p->trapframe->s3;
+		p->reg[15] = p->trapframe->s4;
+		p->reg[16] = p->trapframe->s5;
+		p->reg[17] = p->trapframe->s6;
+		p->reg[18] = p->trapframe->s7;
+		p->reg[19] = p->trapframe->s8;
+		p->reg[20] = p->trapframe->s9;
+		p->reg[21] = p->trapframe->s10;
+		p->reg[22] = p->trapframe->s11;
+		p->trapframe->epc = p->alarm_handler;
 
+		// reset the tick counter
+		p->alarm_accticks = 0;
+		// reset the alarm flag
+		p-> alarmflag = 0;
+	  }
+		yield();
+  }
   usertrapret();
 }
 
