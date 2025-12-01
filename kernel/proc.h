@@ -105,4 +105,10 @@ struct proc {
   struct file *ofile[NOFILE];  // Open files
   struct inode *cwd;           // Current directory
   char name[16];               // Process name (debugging)
+  int alarm_ticks;             // Alarm duration (for sigalarm syscall)
+  int alarm_accticks;          // The alarm accumulated ticks since last handler
+  uint64 alarm_handler;        // Alarm handler
+  uint64 saved_epc;			   // Saved PC after alarm handler changed trapframe->epc
+  uint64 reg[23];              // Saved register for handler call
+  uint64 alarmflag;            // Flag to avoid reentrant handling
 };
