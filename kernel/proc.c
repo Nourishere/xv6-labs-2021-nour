@@ -141,6 +141,9 @@ found:
   p->context.ra = (uint64)forkret;
   p->context.sp = p->kstack + PGSIZE;
 
+  // Set the alarmflag to 1 initially
+  p->alarmflag = 1;
+
   return p;
 }
 
