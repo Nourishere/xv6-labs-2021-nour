@@ -111,7 +111,6 @@ extern uint64 sys_sigreturn(void);
 
 /* An array of function pointers */
 static uint64 (*syscalls[])(void) = {
-<<<<<<< HEAD
 [SYS_fork]    sys_fork,
 [SYS_exit]    sys_exit,
 [SYS_wait]    sys_wait,
@@ -134,7 +133,9 @@ static uint64 (*syscalls[])(void) = {
 [SYS_mkdir]   sys_mkdir,
 [SYS_close]   sys_close,
 [SYS_trace]	  sys_trace,
-[SYS_sysinfo] sys_sysinfo
+[SYS_sysinfo] sys_sysinfo,
+[SYS_sigalarm]   sys_sigalarm,
+[SYS_sigreturn]  sys_sigreturn
 };
 
 const char* SYS_names[] = {
@@ -160,32 +161,9 @@ const char* SYS_names[] = {
 [SYS_mkdir]  "mkdir",
 [SYS_close]  "close",
 [SYS_trace]	 "trace",
-[SYS_sysinfo] "sysinfo"
-=======
-[SYS_fork]       sys_fork,
-[SYS_exit]       sys_exit,
-[SYS_wait]       sys_wait,
-[SYS_pipe]       sys_pipe,
-[SYS_read]       sys_read,
-[SYS_kill]       sys_kill,
-[SYS_exec]       sys_exec,
-[SYS_fstat]      sys_fstat,
-[SYS_chdir]      sys_chdir,
-[SYS_dup]        sys_dup,
-[SYS_getpid]     sys_getpid,
-[SYS_sbrk]       sys_sbrk,
-[SYS_sleep]      sys_sleep,
-[SYS_uptime]     sys_uptime,
-[SYS_open]       sys_open,
-[SYS_write]      sys_write,
-[SYS_mknod]      sys_mknod,
-[SYS_unlink]     sys_unlink,
-[SYS_link]       sys_link,
-[SYS_mkdir]      sys_mkdir,
-[SYS_close]      sys_close,
-[SYS_sigalarm]   sys_sigalarm,
-[SYS_sigreturn]  sys_sigreturn
->>>>>>> dff3898 (lab trap: Added sigalarm and sigreturn system calls and fixed indentation)
+[SYS_sysinfo] "sysinfo",
+[SYS_sigalarm] "sigalarm",
+[SYS_sigreturn] "sigreturn"
 };
 
 void

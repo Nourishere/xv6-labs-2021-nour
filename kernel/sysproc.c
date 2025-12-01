@@ -110,6 +110,7 @@ sys_trace(void)
   if(argint(0, &n) < 0)
     return -1;
   p -> mask = n;	
+  return 0;
 }
 
 // alarm the user of usage after a specified time
@@ -137,6 +138,7 @@ sys_sysinfo(void)
 	info.nproc = proccount();
     if(copyout(myproc()->pagetable, uaddr, (char*) &info, sizeof(info)) < 0)
 		return -1;
+	return 0;
 }
 
 uint64
