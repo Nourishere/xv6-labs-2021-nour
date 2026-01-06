@@ -144,6 +144,18 @@ found:
   // Set the alarmflag to 1 initially
   p->alarmflag = 1;
 
+  #if (LAB_PGTBLE == 1)
+  // Allocate a new pagetable for the process
+  p->kpagetable = proc_kvmcreate();
+  #endif
+/*
+  initlock(&pid_lock, "nextpid");
+  initlock(&wait_lock, "wait_lock");
+  for(p = proc; p < &proc[NPROC]; p++) {
+      initlock(&p->lock, "proc");
+      p->kstack = KSTACK((int) (p - proc));
+  }
+*/
   return p;
 }
 
@@ -159,6 +171,9 @@ freeproc(struct proc *p)
   if(p->pagetable)
     proc_freepagetable(p->pagetable, p->sz);
   p->pagetable = 0;
+  #if(LAB_PGTBLE == 1)
+  proc_kvmfree(p->kpagetable); 
+  #endif
   p->sz = 0;
   p->pid = 0;
   p->parent = 0;
@@ -458,11 +473,19 @@ scheduler(void)
         // before jumping back to us.
         p->state = RUNNING;
         c->proc = p;
+	 	#if (LAB_KPGTBLE == 1)
+	    w_satp(MAKE_SATP(p->kpagetable));
+	    sfence_vma();
+		#endif
         swtch(&c->context, &p->context);
-
         // Process is done running for now.
         // It should have changed its p->state before coming back.
         c->proc = 0;
+	 	#if (LAB_KPGTBLE == 1)
+		// swtich back to main kernel page table
+	    w_satp(MAKE_SATP(kernel_pagetable));
+	    sfence_vma();
+		#endif
       }
       release(&p->lock);
     }
