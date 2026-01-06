@@ -48,6 +48,53 @@ kvmmake(void)
   
   return kpgtbl;
 }
+// A version of kvmcreate() that creates a page table
+// for each process. It does this by copying all the entries
+// above KERBASE from the original page table and only changes
+// addresses that fall into the lowest two PTEs. 
+pagetable_t
+proc_kvmcreate(void)
+{
+  pagetable_t p_kpagetbl = kvmmake();
+  p_kpagetbl = (pagetable_t) kalloc();
+  memset(p_kpagetbl, 0, PGSIZE);
+
+  // This just shares the PTEs from the main kpgtbl
+  for(int i = 1; i < 512; i++){
+  	p_kpagetbl[i] = kernel_pagetable[i];  
+  }
+
+  // Copy the VIRTIO, UART0, PLIC, and CLINT
+  kvmmap(p_kpagetbl, UART0, UART0, PGSIZE, PTE_R | PTE_W);
+  kvmmap(p_kpagetbl, VIRTIO0, VIRTIO0, PGSIZE, PTE_R | PTE_W);
+  kvmmap(p_kpagetbl, PLIC, PLIC, 0x400000, PTE_R | PTE_W);
+  kvmmap(p_kpagetbl, CLINT, CLINT, 0x10000, PTE_R | PTE_W); 
+
+  return p_kpagetbl;
+}
+
+// Free the zeroth PTE in the kernel page table 
+void
+proc_kvmfree(pagetable_t pkpgtbl)
+{
+	pte_t pte = pkpgtbl[0];
+	pagetable_t level1 = (pagetable_t) PTE2PA(pte);
+	// Go through L1 
+	for(int i = 0; i < 512; i++){
+		pte_t pte = level1[i];
+	    // Go through L2 and free the physical address
+		if(pte & PTE_V){ // if the PTE is valid
+		    pagetable_t level2 = (pagetable_t) PTE2PA(pte);
+			// Free level 2
+			kfree((void*)level2);
+			// Invalidate the PTE
+			level2[i] &= 0x0;
+		}
+	}
+	// Free level 1 and L0
+	kfree((void*) level1);
+	kfree((void*) pkpgtbl);
+}
 
 // Initialize the one kernel_pagetable
 void
