@@ -1,4 +1,7 @@
 #define LAB_LAZY 1
+#define LAB_PGTBLE 1
+
+>>>>>>> f2c3531 (Added a preconfiguration for the lab)
 typedef unsigned int   uint;
 typedef unsigned short ushort;
 typedef unsigned char  uchar;
