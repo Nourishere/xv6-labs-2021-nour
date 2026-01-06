@@ -118,4 +118,7 @@ struct proc {
   #if(LAB_LAZY == 1)
   uint64 heap_base;			   // The heap base of the process
   #endif
+  #if (LAB_PGTBLE == 1)
+  pagetable_t kpagetable;      // Kernel page table for each process
+  #endif 
 };
