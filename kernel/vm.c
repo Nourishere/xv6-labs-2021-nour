@@ -521,3 +521,51 @@ vmprint(pagetable_t pagetable)
 			continue;
 	}
 }
+
+// copy a user pagetable into a kernel pagetable
+// startva is the user pagetable in which copying start
+// and endva is the end pagetable
+void
+mapu2kpgtbl(pagetable_t upgtbl, pagetable_t kpgtbl,
+uint64 startva, uint64 endva)
+{
+  uint64 va;
+  pte_t* upte;
+  pte_t* kpte;
+
+  if(endva >= PLIC)
+	panic("mapu2kpgtbl: endva > PLIC\n");
+
+  for(va = startva; va < endva; va += PGSIZE){
+	upte = walk(upgtbl, va, 0);
+	if(upte == 0)
+	  panic("mapu2kpgtbl: walk\n");
+	if((*upte & (PTE_V)) == 0)
+	  panic("mapu2kpgtbl: invalid PTE\n");
+	kpte = walk(kpgtbl, va, 1);
+	if(kpte == 0)
+	  panic("mapu2kpgtbl: no kpgtbl\n");
+	*kpte = *upte;
+	// U bit allows user only to access the pagetable
+	*kpte &= ~(PTE_U | PTE_X | PTE_W);
+  }
+  return;
+}
+// Switch to the one kernel pagetable by changing
+// the satp register and flushing the TLB
+void
+kvmswitch_kernel(void)
+{
+  w_satp(MAKE_SATP(kernel_pagetable));
+  sfence_vma();
+  return;
+}
+
+// Switch to another pagetable
+void
+kvmswitch(pagetable_t pagetable)
+{
+  w_satp(MAKE_SATP(pagetable));
+  sfence_vma();
+  return;
+}
