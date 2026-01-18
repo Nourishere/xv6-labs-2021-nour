@@ -1,4 +1,4 @@
-#define LAB_PGTBLE 0
+#define LAB_PGTBLE 1
 
 typedef unsigned int   uint;
 typedef unsigned short ushort;
