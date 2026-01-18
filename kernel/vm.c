@@ -87,7 +87,7 @@ proc_kvmfree(pagetable_t pkpgtbl)
 			// Free level 2
 			kfree((void*)level2);
 			// Invalidate the PTE
-			level2[i] &= 0x0;
+			level1[i] = 0x0;
 		}
 	}
 	// Free level 1 and L0
