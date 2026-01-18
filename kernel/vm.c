@@ -55,8 +55,7 @@ kvmmake(void)
 pagetable_t
 proc_kvmcreate(void)
 {
-  pagetable_t p_kpagetbl = kvmmake();
-  p_kpagetbl = (pagetable_t) kalloc();
+  pagetable_t p_kpagetbl = (pagetable_t) kalloc();
   memset(p_kpagetbl, 0, PGSIZE);
 
   // This just shares the PTEs from the main kpgtbl
