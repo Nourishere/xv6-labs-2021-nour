@@ -134,6 +134,8 @@ walk(pagetable_t pagetable, uint64 va, int alloc)
     if(*pte & PTE_V) {
       pagetable = (pagetable_t)PTE2PA(*pte);
     } else {
+	  // arg alloc allows the page to be created if it
+	  // is not found.
       if(!alloc || (pagetable = (pde_t*)kalloc()) == 0)
         return 0;
       memset(pagetable, 0, PGSIZE);
@@ -417,13 +419,18 @@ copyout(pagetable_t pagetable, uint64 dstva, char *src, uint64 len)
 int
 copyin(pagetable_t pagetable, char *dst, uint64 srcva, uint64 len)
 {
+  #if (LAB_PGTBLE == 1)
+  return (copyin_new(pagetable, dst, srcva, len));
+  #else
   uint64 n, va0, pa0;
-
   while(len > 0){
+	// move to the start of the page
     va0 = PGROUNDDOWN(srcva);
+	// calculate the physical address
     pa0 = walkaddr(pagetable, va0);
     if(pa0 == 0)
       return -1;
+	// n is the number of bytes remaining in the page
     n = PGSIZE - (srcva - va0);
     if(n > len)
       n = len;
@@ -431,9 +438,11 @@ copyin(pagetable_t pagetable, char *dst, uint64 srcva, uint64 len)
 
     len -= n;
     dst += n;
+	// move to next page?
     srcva = va0 + PGSIZE;
   }
   return 0;
+  #endif
 }
 
 // Copy a null-terminated string from user to kernel.
@@ -443,6 +452,9 @@ copyin(pagetable_t pagetable, char *dst, uint64 srcva, uint64 len)
 int
 copyinstr(pagetable_t pagetable, char *dst, uint64 srcva, uint64 max)
 {
+  #if (LAB_PGTBLE == 1)
+  return (copyinstr_new(pagetable, dst, srcva, max));
+  #else
   uint64 n, va0, pa0;
   int got_null = 0;
 
@@ -477,6 +489,7 @@ copyinstr(pagetable_t pagetable, char *dst, uint64 srcva, uint64 max)
   } else {
     return -1;
   }
+  #endif
 }
 
 // print the process page table tree
