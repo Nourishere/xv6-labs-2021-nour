@@ -147,22 +147,7 @@ found:
   #if (LAB_PGTBLE == 1)
   // Allocate a new pagetable for the process
   p->kpagetable = proc_kvmcreate();
-
-  // Allocate a page for the process's kernel stack.
-  // Map it high in memory, followed by an invalid
-  // guard page.
-  for(p = proc; p < &proc[NPROC]; p++) {
-      initlock(&p->lock, "proc");
-      char *pa = kalloc();
-      if(pa == 0)
-        panic("kalloc");
-      uint64 va = KSTACK((int) (p - proc));
-      kvmmap(va, (uint64)pa, PGSIZE, PTE_R | PTE_W);
-      p->kstack = va;
-  }
-  kvminithart();
   #endif
-
   return p;
 }
 
@@ -259,7 +244,9 @@ userinit(void)
   // and data into it.
   uvminit(p->pagetable, initcode, sizeof(initcode));
   p->sz = PGSIZE;
-
+  #if (LAB_PGTBLE == 1)
+  mapu2kpgtbl(p->pagetable, p->kpagetable, 0, p->sz);
+  #endif
   // prepare for the very first "return" from kernel to user.
   p->trapframe->epc = 0;      // user program counter
   p->trapframe->sp = PGSIZE;  // user stack pointer
@@ -288,6 +275,9 @@ growproc(int n)
   } else if(n < 0){
     sz = uvmdealloc(p->pagetable, sz, sz + n);
   }
+  #if (LAB_PGTBLE == 1)
+  mapu2kpgtbl(p->pagetable, p->kpagetable, 0, p->sz);
+  #endif
   p->sz = sz;
   return 0;
 }
@@ -332,8 +322,10 @@ fork(void)
 
   pid = np->pid;
 
+  #if (LAB_PGTBLE == 1)
+  mapu2kpgtbl(np->pagetable, np->kpagetable, 0, np->sz);
+  #endif
   release(&np->lock);
-
   acquire(&wait_lock);
   np->parent = p;
   release(&wait_lock);
@@ -480,18 +472,16 @@ scheduler(void)
         // before jumping back to us.
         p->state = RUNNING;
         c->proc = p;
-	 	#if (LAB_KPGTBLE == 1)
-	    w_satp(MAKE_SATP(p->kpagetable));
-	    sfence_vma();
+	 	#if (LAB_PGTBLE == 1)
+	    kvmswitch(p->kpagetable);
 		#endif
         swtch(&c->context, &p->context);
         // Process is done running for now.
         // It should have changed its p->state before coming back.
         c->proc = 0;
-	 	#if (LAB_KPGTBLE == 1)
+	 	#if (LAB_PGTBLE == 1)
 		// swtich back to main kernel page table
-	    w_satp(MAKE_SATP(kernel_pagetable));
-	    sfence_vma();
+		kvmswitch_kernel();
 		#endif
       }
       release(&p->lock);
