@@ -115,6 +115,11 @@ exec(char *path, char **argv)
   p->trapframe->epc = elf.entry;  // initial program counter = main
   p->trapframe->sp = sp; // initial stack pointer
   proc_freepagetable(oldpagetable, oldsz);
+
+  #if (LAB_PGTBLE == 1)
+  mapu2kpgtbl(p->pagetable, p->kpagetable, 0, p->sz);
+  #endif
+
   // print the page table tree for the init process
   if (p -> pid == 1)
 	vmprint(p -> pagetable);
