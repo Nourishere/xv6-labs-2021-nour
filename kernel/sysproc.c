@@ -50,6 +50,9 @@ sys_sbrk(void)
   addr = myproc()->sz;
   if(growproc(n) < 0)
     return -1;
+  #if (LAB_PGTBLE == 1)
+  mapu2kpgtbl(myproc()->pagetable, myproc()->kpagetable, 0, myproc()->sz);
+  #endif
   return addr;
 }
 
