@@ -115,4 +115,7 @@ struct proc {
   uint64 saved_epc;			   // Saved PC after alarm handler changed trapframe->epc
   uint64 reg[23];              // Saved register for handler call
   uint64 alarmflag;            // Flag to avoid reentrant handling
+  #if(LAB_LAZY == 1)
+  uint64 heap_base;			   // The heap base of the process
+  #endif
 };
