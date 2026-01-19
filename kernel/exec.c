@@ -63,6 +63,9 @@ exec(char *path, char **argv)
 
   p = myproc();
   uint64 oldsz = p->sz;
+  #if(LAB_LAZY == 1)
+  p->heap_base = p->sz;
+  #endif
 
   // Allocate two pages at the next page boundary.
   // Use the second as the user stack.
