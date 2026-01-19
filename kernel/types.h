@@ -1,3 +1,4 @@
+#define LAB_LAZY 1
 typedef unsigned int   uint;
 typedef unsigned short ushort;
 typedef unsigned char  uchar;
