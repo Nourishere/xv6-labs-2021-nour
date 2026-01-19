@@ -48,9 +48,24 @@ sys_sbrk(void)
 
   if(argint(0, &n) < 0)
     return -1;
+  #if (LAB_LAZY == 1)
+  addr = myproc() -> sz;
+  if(n < 0){
+    myproc()->sz += n;
+    uint64 new = myproc()->sz;
+	// check for bounds
+	if(new < myproc()->heap_base)
+	  return -1;
+	// free the memory
+	uvmunmap(myproc()->pagetable, PGROUNDDOWN(new), PGROUNDDOWN(new) - PGROUNDDOWN(addr), 0);
+  }
+  else
+    myproc()->sz += n;
+  #else
   addr = myproc()->sz;
   if(growproc(n) < 0)
     return -1;
+  #endif
   return addr;
 }
 
