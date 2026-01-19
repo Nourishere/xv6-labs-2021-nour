@@ -201,6 +201,7 @@ UPROGS=\
 	$U/_primes\
 	$U/_find\
 	$U/_xargs\
+	$U/_lazytests
 
 ifeq ($(LAB),$(filter $(LAB), pgtbl lock))
 UPROGS += \
