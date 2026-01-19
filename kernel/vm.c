@@ -316,9 +316,17 @@ uvmcopy(pagetable_t old, pagetable_t new, uint64 sz)
 
   for(i = 0; i < sz; i += PGSIZE){
     if((pte = walk(old, i, 0)) == 0)
+	  #if(LAB_LAZY == 1)
+      continue;
+      #else
       panic("uvmcopy: pte should exist");
+      #endif
     if((*pte & PTE_V) == 0)
+	  #if(LAB_LAZY == 1)
+      continue;
+      #else
       panic("uvmcopy: page not present");
+      #endif
     pa = PTE2PA(*pte);
     flags = PTE_FLAGS(*pte);
     if((mem = kalloc()) == 0)
