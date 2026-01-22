@@ -65,6 +65,7 @@ sys_sbrk(void)
   addr = myproc()->sz;
   if(growproc(n) < 0)
     return -1;
+  #endif
   #if (LAB_PGTBLE == 1)
   mapu2kpgtbl(myproc()->pagetable, myproc()->kpagetable, 0, myproc()->sz);
   #endif
@@ -130,6 +131,7 @@ sys_trace(void)
   return 0;
 }
 
+#if (LAB_TRAP == 1)
 // alarm the user of usage after a specified time
 uint64
 sys_sigalarm(void)
@@ -143,7 +145,9 @@ sys_sigalarm(void)
 
   return 0;
 }
+#endif
 
+#if(LAB_TRAP == 1)
 uint64
 sys_sysinfo(void)
 {
@@ -157,7 +161,9 @@ sys_sysinfo(void)
 		return -1;
 	return 0;
 }
+#endif
 
+#if(LAB_TRAP == 1)
 uint64
 sys_sigreturn(void){
     struct proc* p = myproc();
@@ -190,3 +196,4 @@ sys_sigreturn(void){
 	p->alarmflag = 1;
 	return 0;
 }
+#endif

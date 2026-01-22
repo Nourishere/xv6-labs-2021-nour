@@ -67,7 +67,9 @@ usertrap(void)
     syscall();
   } else if((which_dev = devintr()) != 0){
     // ok
-  } else if (r_scause() == 13 || r_scause() == 15){
+  } 
+	#if(LAB_LAZY == 1)
+    else if (r_scause() == 13 || r_scause() == 15){
 	  uint64 va = r_stval();
 	  // Degugging printf
 	  //printf("Page fault: scause: %d\n",r_scause());
@@ -87,7 +89,9 @@ usertrap(void)
 		  p->killed = 1;
 		}
 	  }
-  } else {
+  }
+	#endif
+	else {
     printf("usertrap(): unexpected scause %p pid=%d\n", r_scause(), p->pid);
     printf("            sepc=%p stval=%p\n", r_sepc(), r_stval());
     p->killed = 1;
@@ -98,6 +102,7 @@ usertrap(void)
 
   // give up the CPU if this is a timer interrupt.
   if(which_dev == 2){
+    #if(LAB_TRAP == 1)
     // another tick
 	p->alarm_accticks ++;
 	if(p->alarm_accticks == p->alarm_ticks && p->alarm_ticks > 0 && p->alarmflag){
@@ -132,6 +137,7 @@ usertrap(void)
 		// reset the alarm flag
 		p-> alarmflag = 0;
 	  }
+		#endif
 		yield();
   }
   usertrapret();

@@ -141,8 +141,10 @@ found:
   p->context.ra = (uint64)forkret;
   p->context.sp = p->kstack + PGSIZE;
 
+  #if (LAB_TRAP == 1)
   // Set the alarmflag to 1 initially
   p->alarmflag = 1;
+  #endif
 
   #if (LAB_PGTBLE == 1)
   // Allocate a new pagetable for the process

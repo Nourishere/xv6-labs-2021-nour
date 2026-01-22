@@ -1,4 +1,4 @@
-#define LAB_LAZY 1
+#define LAB_LAZY 0
 #define LAB_PGTBLE 1
 #define LAB_TRAP 0
 

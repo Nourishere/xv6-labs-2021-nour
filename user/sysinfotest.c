@@ -3,7 +3,7 @@
 #include "kernel/sysinfo.h"
 #include "user/user.h"
 
-
+#if(LAB_TRAP == 1)
 void
 sinfo(struct sysinfo *info) {
   if (sysinfo(info) < 0) {
@@ -130,3 +130,4 @@ main(int argc, char *argv[])
   printf("sysinfotest: OK\n");
   exit(0);
 }
+#endif

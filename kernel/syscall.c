@@ -105,9 +105,11 @@ extern uint64 sys_wait(void);
 extern uint64 sys_write(void);
 extern uint64 sys_uptime(void);
 extern uint64 sys_trace(void);
+#if(LAB_TRAP == 1)
 extern uint64 sys_sysinfo(void);
 extern uint64 sys_sigalarm(void);
 extern uint64 sys_sigreturn(void);
+#endif
 
 /* An array of function pointers */
 static uint64 (*syscalls[])(void) = {
@@ -132,10 +134,12 @@ static uint64 (*syscalls[])(void) = {
 [SYS_link]    sys_link,
 [SYS_mkdir]   sys_mkdir,
 [SYS_close]   sys_close,
-[SYS_trace]	  sys_trace,
+#if(LAB_TRAP == 1)
 [SYS_sysinfo] sys_sysinfo,
 [SYS_sigalarm]   sys_sigalarm,
-[SYS_sigreturn]  sys_sigreturn
+[SYS_sigreturn]  sys_sigreturn,
+#endif
+[SYS_trace]	  sys_trace
 };
 
 const char* SYS_names[] = {
