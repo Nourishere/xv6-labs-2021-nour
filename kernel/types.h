@@ -1,5 +1,6 @@
 #define LAB_LAZY 1
 #define LAB_PGTBLE 1
+#define LAB_TRAP 0
 
 typedef unsigned int   uint;
 typedef unsigned short ushort;
