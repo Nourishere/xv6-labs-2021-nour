@@ -69,7 +69,8 @@ usertrap(void)
     // ok
   } else if (r_scause() == 13 || r_scause() == 15){
 	  uint64 va = r_stval();
-	  printf("Page fault: scause: %d\n",r_scause());
+	  // Degugging printf
+	  //printf("Page fault: scause: %d\n",r_scause());
       if(PGROUNDDOWN(va) > p->sz){
 		// memory requested was never granted by sbrk
 		printf("usertrap(): memory out of bounds\n");
