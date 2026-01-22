@@ -57,7 +57,7 @@ sys_sbrk(void)
 	if(new < myproc()->heap_base)
 	  return -1;
 	// free the memory
-	uvmunmap(myproc()->pagetable, PGROUNDDOWN(new), PGROUNDDOWN(new) - PGROUNDDOWN(addr), 0);
+	uvmunmap(myproc()->pagetable, PGROUNDDOWN(new), (PGROUNDDOWN(addr)-PGROUNDDOWN(new))/PGSIZE, 0);
   }
   else
     myproc()->sz += n;
