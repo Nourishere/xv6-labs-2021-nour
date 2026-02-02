@@ -45,22 +45,28 @@ sys_sbrk(void)
 {
   int addr;
   int n;
+  struct proc* p = myproc();
+  uint64 new;
 
   if(argint(0, &n) < 0)
     return -1;
   #if (LAB_LAZY == 1)
-  addr = myproc() -> sz;
+  addr = p->sz;
   if(n < 0){
-    myproc()->sz += n;
-    uint64 new = myproc()->sz;
+	uint64 needed = (uint64)(-n);
+	if (p->sz<needed)
+		return -1;
+	p->sz -= needed;
+	new = p->sz;
+
 	// check for bounds
-	if(new < myproc()->heap_base)
+	if(new < p->heap_base)
 	  return -1;
 	// free the memory
-	uvmunmap(myproc()->pagetable, PGROUNDDOWN(new), (PGROUNDDOWN(addr)-PGROUNDDOWN(new))/PGSIZE, 0);
+	uvmunmap(p->pagetable, PGROUNDDOWN(new), ((PGROUNDDOWN(addr)-PGROUNDDOWN(new))/PGSIZE), 0);
   }
   else
-    myproc()->sz += n;
+    p->sz += (uint64)n;
   #else
   addr = myproc()->sz;
   if(growproc(n) < 0)
