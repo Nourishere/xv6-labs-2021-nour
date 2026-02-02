@@ -77,11 +77,15 @@ usertrap(void)
 		// memory requested was never granted by sbrk
 		printf("usertrap(): memory out of bounds\n");
 		p->killed = 1;
-	  }
-      else{
+	  }else if(PGROUNDDOWN(va) == PGROUNDDOWN(p->trapframe->sp - PGSIZE)){
+		// A page below the stack is a guard and shouldn't be allocated
+		printf("usertrap(): stack guard\n");
+		exit(-1);
+      }else{
 		uint64 mem = (uint64) kalloc();
 		if(mem == 0)
-		  panic("kalloc\n");
+		  exit(-1);
+		  //panic("kalloc\n");
 		memset((void*)mem, 0, PGSIZE);
 		// map memory to process pagetable
 		if(mappages(p->pagetable, PGROUNDDOWN(va), PGSIZE, mem, PTE_W|PTE_R|PTE_U) != 0){
