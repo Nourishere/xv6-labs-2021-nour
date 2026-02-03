@@ -378,6 +378,18 @@ copyout(pagetable_t pagetable, uint64 dstva, char *src, uint64 len)
     pa0 = walkaddr(pagetable, va0);
     if(pa0 == 0)
       return -1;
+	#if (_LAB_COW == 1)
+	if(va0 >= MAXVA)
+		return -1;
+	// probably a pgtbl with no write permission
+	// AND a U bit set is always a COW page
+	pte_t* pte = walk(pagetable, va0, 0);
+	if((*pte & PTE_W) == 0){
+		if(cow_handle(pagetable, va0))
+			return -1;
+	}
+	pa0 = PTE2PA(*pte);
+	#endif
     n = PGSIZE - (dstva - va0);
     if(n > len)
       n = len;
