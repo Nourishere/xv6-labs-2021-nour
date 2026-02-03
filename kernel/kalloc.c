@@ -22,7 +22,12 @@ struct {
   struct spinlock lock;
   struct run *freelist;
 } kmem;
-
+#if(_LAB_COW == 1)
+// reference count for each page
+uint64 refcount[PHYSTOP/PGSIZE];
+// refernce lock
+struct spinlock reflock;
+#endif
 void
 kinit()
 {
