@@ -15,6 +15,24 @@ extern char etext[];  // kernel.ld sets this to end of kernel code.
 
 extern char trampoline[]; // trampoline.S
 
+#if (_LAB_COW == 1)
+extern uint64 refcount[PHYSTOP/PGSIZE];
+extern struct spinlock reflock;
+
+void
+incref(uint64 pa)
+{
+	if(pa >= PHYSTOP)
+	  panic("incref: pa too big\n");
+	uint64 np = pa / PGSIZE;
+	if(refcount[np] < 1)
+	  panic("incref: page should be free\n");
+	acquire(&reflock);
+	refcount[np] += 1;	
+	release(&reflock);
+	return;
+}
+#endif
 // Make a direct-map page table for the kernel.
 pagetable_t
 kvmmake(void)
