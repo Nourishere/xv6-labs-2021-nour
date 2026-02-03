@@ -28,6 +28,33 @@ trapinithart(void)
 {
   w_stvec((uint64)kernelvec);
 }
+#if (_LAB_COW == 1)
+int
+cow_handle(pagetable_t pgtbl, uint64 pa)
+{
+	// check for illegal access
+	if(pa >= MAXVA)
+		return -1;
+	pte_t* pte = (uint64*) walk(pgtbl, pa, 0);
+	if(pte == 0)
+		return -1;
+	if((*pte & PTE_U)== 0 || (*pte & PTE_V) == 0)
+		return -1;
+
+	// allocate the new page
+	uint64 pa1 = PTE2PA(*pte);
+	uint64 pa2 = (uint64) kalloc();
+	if(pa2 == 0){
+		printf("trap: OOM\n");
+		return -1;
+	}
+    // copy physical page and remap
+	memmove((void*) pa2, (void*)pa1, PGSIZE);
+	*pte = PA2PTE(pa2) | PTE_V | PTE_W | PTE_R | PTE_X | PTE_U;
+	kfree((void*) pa1);
+	return 0;
+}
+#endif
 
 //
 // handle an interrupt, exception, or system call from user space.
