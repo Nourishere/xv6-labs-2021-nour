@@ -140,6 +140,7 @@ int             fetchaddr(uint64, uint64*);
 void            syscall();
 
 // trap.c
+int				cow_handle(pagetable_t, uint64);
 extern uint     ticks;
 void            trapinit(void);
 void            trapinithart(void);
