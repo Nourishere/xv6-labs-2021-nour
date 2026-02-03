@@ -41,7 +41,9 @@ freerange(void *pa_start, void *pa_end)
   char *p;
   p = (char*)PGROUNDUP((uint64)pa_start);
   for(; p + PGSIZE <= (char*)pa_end; p += PGSIZE){
+	#if(_LAB_COW == 1)
 	refcount[(uint64)p/PGSIZE]=1;
+	#endif
     kfree(p);
   }
 }
@@ -58,6 +60,7 @@ kfree(void *pa)
   if(((uint64)pa % PGSIZE) != 0 || (char*)pa < end || (uint64)pa >= PHYSTOP)
     panic("kfree");
 
+  #if(_LAB_COW == 1)
   uint64 np = (uint64) pa / PGSIZE;
   acquire(&reflock);
   if(refcount[np] < 1)
@@ -67,6 +70,7 @@ kfree(void *pa)
 
   if(refcount[np] != 0)
 	return;
+  #endif
   // Fill with junk to catch dangling refs.
   memset(pa, 1, PGSIZE);
 

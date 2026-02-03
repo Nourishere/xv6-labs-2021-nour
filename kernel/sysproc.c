@@ -46,11 +46,11 @@ sys_sbrk(void)
   int addr;
   int n;
   struct proc* p = myproc();
-  uint64 new;
 
   if(argint(0, &n) < 0)
     return -1;
   #if (LAB_LAZY == 1)
+  uint64 new;
   addr = p->sz;
   if(n < 0){
 	uint64 needed = (uint64)(-n);
@@ -68,12 +68,12 @@ sys_sbrk(void)
   else
     p->sz += (uint64)n;
   #else
-  addr = myproc()->sz;
+  addr = p->sz;
   if(growproc(n) < 0)
     return -1;
   #endif
   #if (LAB_PGTBLE == 1)
-  mapu2kpgtbl(myproc()->pagetable, myproc()->kpagetable, 0, myproc()->sz);
+  mapu2kpgtbl(p->pagetable, p->kpagetable, 0, p->sz);
   #endif
   return addr;
 }

@@ -123,17 +123,16 @@ usertrap(void)
 		  p->killed = 1;
 		}
 	  }
-  }
 	#endif
+  }
   else {
     printf("usertrap(): unexpected scause %p pid=%d\n", r_scause(), p->pid);
     printf("            sepc=%p stval=%p\n", r_sepc(), r_stval());
     p->killed = 1;
-}
 
   if(p->killed)
     exit(-1);
-
+}
   // give up the CPU if this is a timer interrupt.
   if(which_dev == 2){
     #if(LAB_TRAP == 1)
