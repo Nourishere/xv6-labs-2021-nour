@@ -16,6 +16,7 @@ struct entry {
 struct entry *table[NBUCKET];
 int keys[NKEYS];
 int nthread = 1;
+pthread_mutex_t lock;            // declare a lock
 
 
 double
@@ -117,7 +118,10 @@ main(int argc, char *argv[])
   for (int i = 0; i < NKEYS; i++) {
     keys[i] = random();
   }
-
+  // Configuring locks
+  pthread_mutex_init(&lock, NULL); // initialize the lock
+  pthread_mutex_lock(&lock);       // acquire lock
+  pthread_mutex_unlock(&lock);     // release lock
   //
   // first the puts
   //
