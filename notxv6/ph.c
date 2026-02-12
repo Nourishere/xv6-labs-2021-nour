@@ -53,7 +53,9 @@ void put(int key, int value)
     e->value = value;
   } else {
     // the new is new.
-    insert(key, value, &table[i], table[i]);
+	pthread_mutex_lock(&lock);
+	insert(key, value, &table[i], table[i]);
+	pthread_mutex_unlock(&lock);
   }
 
 }
