@@ -12,6 +12,7 @@ struct superblock;
 struct mbuf;
 struct sock;
 #endif
+extern int nocpus;
 
 // bio.c
 void            binit(void);
