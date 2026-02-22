@@ -75,14 +75,30 @@ void *
 kalloc(void)
 {
   struct run *r;
+  push_off();
+  int id = cpuid();
+  pop_off();
 
-  acquire(&kmem.lock);
-  r = kmem.freelist;
-  if(r)
-    kmem.freelist = r->next;
-  release(&kmem.lock);
+  acquire(&kmem[id].lock);
+  r = kmem[id].freelist;
+  if(!r){
+    release(&kmem[id].lock);
+	for(int i = nocpus-1, j = 0; j < NCPU; j++){
+		acquire(&kmem[i].lock);
+		r = kmem[i].freelist;
+	    if(r){
+			id = i;
+			break;
+	    }
+		release(&kmem[i].lock);
+		i = (i + 1) % NCPU;
+	}
+	if(!r)
+		return (void*)r;
+  }
+  kmem[id].freelist = r->next;
+  release(&kmem[id].lock);
 
-  if(r)
-    memset((char*)r, 5, PGSIZE); // fill with junk
+  memset((char*)r, 5, PGSIZE); // fill with junk
   return (void*)r;
 }
