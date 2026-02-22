@@ -3,13 +3,14 @@
 #include "memlayout.h"
 #include "riscv.h"
 #include "defs.h"
-
+int nocpus = 0;
 volatile static int started = 0;
 
 // start() jumps here in supervisor mode on all CPUs.
 void
 main()
 {
+	nocpus += 1;
   if(cpuid() == 0){
     consoleinit();
 #if defined(LAB_LOCK)
