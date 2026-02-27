@@ -47,16 +47,23 @@ binit(void)
   struct buf *b;
 
   initlock(&bcache.lock, "bcache");
+  struct bucket *bkt = bcache.buck;
+  for(int i = 0; i < NOBKTS; i++)
+	initlock(&bkt[i].lock, "block");
 
   // Create linked list of buffers
-  bcache.head.prev = &bcache.head;
-  bcache.head.next = &bcache.head;
-  for(b = bcache.buf; b < bcache.buf+NBUF; b++){
-    b->next = bcache.head.next;
-    b->prev = &bcache.head;
-    initsleeplock(&b->lock, "buffer");
-    bcache.head.next->prev = b;
-    bcache.head.next = b;
+  for(int i = 0; i < NOBKTS; i++){
+    bkt[i].head.prev = &bkt[i].head;
+    bkt[i].head.next = &bkt[i].head;
+  }
+  for(int i = 0; i < NBUF; i++){
+	b = &bcache.buf[i];
+	initsleeplock(&b->lock, "buffer");
+	struct bucket* bk = &bcache.buck[bhash(i)];
+	b->next = bk->head.next;
+	b->prev = &bk->head;
+	bk->head.next->prev = b;
+	bk->head.next = b;
   }
 }
 
