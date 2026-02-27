@@ -35,6 +35,12 @@ struct {
   struct bucket buck[NOBKTS];
 } bcache;
 
+uint
+bhash(uint blockno)
+{
+  return blockno % NOBKTS;
+}
+
 void
 binit(void)
 {
