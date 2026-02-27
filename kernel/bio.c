@@ -74,33 +74,99 @@ static struct buf*
 bget(uint dev, uint blockno)
 {
   struct buf *b;
+  struct buf *victim = 0;
+  struct bucket* bkt = 0;
+  uint64 minticks = ~0;
 
-  acquire(&bcache.lock);
+  for(;;){
+    victim = 0;
+    minticks = ~0;
+	int new_h = bhash(blockno);
+	bkt = &bcache.buck[new_h];
 
-  // Is the block already cached?
-  for(b = bcache.head.next; b != &bcache.head; b = b->next){
-    if(b->dev == dev && b->blockno == blockno){
-      b->refcnt++;
-      release(&bcache.lock);
-      acquiresleep(&b->lock);
-      return b;
+	acquire(&bkt->lock);
+	// Is the block already cached?
+	for(b = bkt->head.next; b != &bkt->head; b = b->next){
+	  if(b->dev == dev && b->blockno == blockno){
+	    b->refcnt++;
+	    release(&bkt->lock);
+	    acquiresleep(&b->lock);
+	    return b;
+	  }
+	}
+	release(&bkt->lock);
+
+	// No cached block. Allocate one
+	acquire(&bcache.lock);
+	for(int i = 0; i < NBUF; i++){
+	    struct buf *buf = &bcache.buf[i];
+	    if(buf->refcnt == 0 && buf->ticks < minticks){
+		  minticks = buf->ticks;
+		  victim = buf;
+	    }
+	}
+	if(victim == 0)
+	    panic("bget: no free buffers");
+
+	int old_h = bhash(victim->blockno);
+
+	struct bucket *first, *second;
+	if(old_h < new_h){
+	    first = &bcache.buck[old_h];
+	    second = &bcache.buck[new_h];
+	} else if(old_h > new_h){
+	    first = &bcache.buck[new_h];
+	    second = &bcache.buck[old_h];
+	} else {
+	    first = second = &bcache.buck[old_h];
+	}
+
+	acquire(&first->lock);
+	if(first != second)
+	  acquire(&second->lock);
+	release(&bcache.lock);
+
+    // Victim may have been grabbed by another thread
+    if(victim->refcnt != 0){
+      release(&first->lock);
+      if(first != second)
+		release(&second->lock);
+      continue;
     }
-  }
 
-  // Not cached.
-  // Recycle the least recently used (LRU) unused buffer.
-  for(b = bcache.head.prev; b != &bcache.head; b = b->prev){
-    if(b->refcnt == 0) {
-      b->dev = dev;
-      b->blockno = blockno;
-      b->valid = 0;
-      b->refcnt = 1;
-      release(&bcache.lock);
-      acquiresleep(&b->lock);
-      return b;
-    }
+    // Another thread may have cached this block while we were working
+	for(b = bkt->head.next; b != &bkt->head; b = b->next){
+	  if(b->dev == dev && b->blockno == blockno){
+	    b->refcnt++;
+	    release(&first->lock);
+	    if(first != second)
+		   release(&second->lock);
+	    acquiresleep(&b->lock);
+	    return b;
+	  }
+	}
+	// relinking
+	victim->prev->next = victim->next;
+	victim->next->prev = victim->prev;
+
+	victim->next = bkt->head.next;
+	victim->prev = &bkt->head;
+	bkt->head.next->prev = victim;
+	bkt->head.next = victim;
+
+	victim->refcnt = 1;
+	victim->dev = dev;
+	victim->blockno = blockno;
+	victim->valid = 0;
+
+	release(&first->lock);
+
+	if(first != second)
+	  release(&second->lock);
+
+	acquiresleep(&victim->lock);
+	return victim;
   }
-  panic("bget: no buffers");
 }
 
 // Return a locked buf with the contents of the indicated block.
