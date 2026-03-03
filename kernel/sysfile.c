@@ -310,6 +310,34 @@ sys_open(void)
       return -1;
     }
     ilock(ip);
+  // open the target file instead in case of a symlink
+  // and loop for chained symlinks
+  if(!(omode & O_NOFOLLOW) && ip->type == T_SYMLINK){
+	int i;
+	char target[MAXPATH];
+	for(i = 0; i < MAXSYM; i++){
+	  if(ip->type != T_SYMLINK)
+		break;
+	  if((readi(ip, 0, (uint64)target, 0, ip->size)) < ip->size){
+		iunlockput(ip);
+		end_op();
+	    return -1;
+	  }
+	  target[ip->size] = '\0';
+	  iunlockput(ip);
+	  if((ip = namei(target)) == 0){
+		end_op();
+	    return -1;
+	  }
+	  ilock(ip);
+	}
+	// reached symlink limit
+	if(i == MAXSYM){
+	  iunlockput(ip);
+	  end_op();
+	  return -1;
+	}
+  }
     if(ip->type == T_DIR && omode != O_RDONLY){
       iunlockput(ip);
       end_op();
