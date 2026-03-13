@@ -141,6 +141,9 @@ found:
   p->context.ra = (uint64)forkret;
   p->context.sp = p->kstack + PGSIZE;
 
+  // Initialize the top of the mmap region (right below trapframe)
+  p->mmap_top = TRAPFRAME;
+
   return p;
 }
 
