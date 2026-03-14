@@ -1,3 +1,4 @@
+#include "fcntl.h"
 // Saved registers for kernel context switches.
 struct context {
   uint64 ra;
@@ -80,6 +81,15 @@ struct trapframe {
   /* 280 */ uint64 t6;
 };
 
+struct vma_t {
+  uint64 addr;
+  int used;
+  int prot;
+  int len;
+  int flags;
+  int offset;
+  struct file* f;
+};
 enum procstate { UNUSED, USED, SLEEPING, RUNNABLE, RUNNING, ZOMBIE };
 
 // Per-process state
@@ -99,7 +109,9 @@ struct proc {
   // these are private to the process, so p->lock need not be held.
   uint64 kstack;               // Virtual address of kernel stack
   uint64 sz;                   // Size of process memory (bytes)
+  uint64 mmap_top;
   pagetable_t pagetable;       // User page table
+  struct vma_t vma[NOVMA];	   // VMA struct stored context for mmap
   struct trapframe *trapframe; // data page for trampoline.S
   struct context context;      // swtch() here to run process
   struct file *ofile[NOFILE];  // Open files
