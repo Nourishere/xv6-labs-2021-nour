@@ -186,3 +186,6 @@ void            virtio_disk_intr(void);
 
 // number of elements in fixed-size array
 #define NELEM(x) (sizeof(x)/sizeof((x)[0]))
+
+// Helpful macros
+#define min(a, b) ((a) < (b) ? (a) : (b))
