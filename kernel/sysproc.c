@@ -103,25 +103,31 @@ sys_uptime(void)
 uint64
 sys_mmap(void)
 {
-  int length, prot, flags, fd;
+  int prot, flags, fd, offset;
+  uint64 length;
   struct proc* p = myproc();
   uint64 addr = ~0;
-  if(argint(1,&length) < 0 || argint(2, &prot) < 0 || argint(3, &flags) < 0 || argint(4, &fd) < 0 || argint(5, &offset) < 0) return addr;
+  if(argaddr(1,&length) < 0 || argint(2, &prot) < 0 || argint(3, &flags) < 0 || argint(4, &fd) < 0 || argint(5, &offset) < 0) return addr;
 
+  // can't map a file r/w + shared when it is opened only for reading
+  if((flags & MAP_SHARED) && (prot & PROT_WRITE) && (!p->ofile[fd]->writable))
+	return ~0;
   for(int i = 0; i < NOVMA; i++){
 	// mmap base is TRAPFRAME + PGISIZE
 	// get and addr for the mmap to map
-    if(!vma[i].used){
-      addr = p->mmap_top - PGROUNDUP((uint64)length);
-      p->vindex = i;
-      p->vma[i].len = length;
-      p->vma[i].f = p->ofile[fd];
-      p->vma[i].addr=addr;
-      p->vma[i].prot=prot;
-      p->vma[i].flags=flags;
-      p->vma[i].used = 1;
-	  filedup(p->ofile[fd]);
+    if(!p->vma[i].used){
+      addr = p->mmap_top - PGROUNDUP(length);
+	  p->mmap_top = addr;
+	  p->vma[i].len = length;
+	  p->vma[i].f = p->ofile[fd];
+	  p->vma[i].addr=addr;
+	  p->vma[i].prot=prot;
+	  p->vma[i].flags=flags;
+	  p->vma[i].offset=offset;
+	  p->vma[i].used = 1;
+	  filedup(p->vma[i].f);
       break;
+	}
   }
   return addr;
 }
