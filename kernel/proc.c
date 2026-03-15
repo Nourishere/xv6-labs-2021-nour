@@ -288,6 +288,19 @@ fork(void)
     return -1;
   }
 
+  // Copy over the parent's vma structs
+  for(int i = 0; i < NOVMA; i++){
+	np->vma[i] = p->vma[i];
+	if(p->vma[i].used){
+	printf("fork: pid=%d copying vma[%d] addr=%p len=%d\n",
+    p->pid, i, p->vma[i].addr, p->vma[i].len);
+		filedup(p->vma[i].f);
+	}
+  }
+
+  // Copy over mmap_top
+  np->mmap_top = p->mmap_top;
+
   // Copy user memory from parent to child.
   if(uvmcopy(p->pagetable, np->pagetable, p->sz) < 0){
     freeproc(np);
