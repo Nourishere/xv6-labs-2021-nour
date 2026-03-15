@@ -373,6 +373,36 @@ exit(int status)
     }
   }
 
+  // loop over and cleanup the vma struct
+  // write back if nessesary
+  int r;
+  for(int i = 0; i < NOVMA; i++){
+    struct vma_t* v = &p->vma[i];
+	if (!v->used) continue;
+	// write back in the case of a shared mapping
+	if(v->flags & MAP_SHARED){
+	  begin_op();
+	  ilock(v->f->ip);
+	  uint64 offset = v->offset;
+	  uint64 n = min(v->len, v->f->ip->size - offset);
+	  if ((r = writei(v->f->ip, 1, v->addr, v->offset, n)) < 0){
+	    iunlock(v->f->ip);
+	    panic("exit: writei\n");
+	  }
+	  iunlock(v->f->ip);
+	  if(r != v->len){
+	    // error from writei
+		//printf("exit: couldn't write back\n");
+	  }
+	  end_op();
+	}
+	v->used = 0;
+	//fileclose(v->f);
+	uvmunmap(p->pagetable, v->addr, PGROUNDUP(v->len)/PGSIZE, 1);
+	printf("exit: pid=%d cleaning vma[%d] addr=%p len=%d\n",
+    p->pid, i, v->addr, v->len);
+  }
+
   begin_op();
   iput(p->cwd);
   end_op();
