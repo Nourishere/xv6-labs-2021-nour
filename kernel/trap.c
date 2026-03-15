@@ -3,8 +3,11 @@
 #include "memlayout.h"
 #include "riscv.h"
 #include "spinlock.h"
+#include "sleeplock.h"
 #include "proc.h"
 #include "defs.h"
+#include "fs.h"
+#include "file.h"
 
 struct spinlock tickslock;
 uint ticks;
@@ -67,6 +70,60 @@ usertrap(void)
     syscall();
   } else if((which_dev = devintr()) != 0){
     // ok
+  } else if(r_scause() == 13 || r_scause() == 15){
+	  uint64 va = r_stval();
+	  int vindex = -1;
+	  if(va > TRAPFRAME || va < p->mmap_top){
+		printf("usertrap: mmap: illegal memory access\n");
+		p->killed = 1;
+	  }
+	  // find the vma of cause
+	  for(int i = 0; i < NOVMA; i++){
+	    if(va >= p->vma[i].addr && va < p->vma[i].addr + p->vma[i].len){
+		  vindex = i;
+		  break;
+	    }
+	  }
+	  if(vindex < 0){
+		printf("usertrap: mmap: no vma found\n");
+		p->killed = 1;
+	  } else {
+		  char* mem;
+		  mem = kalloc();
+		  memset(mem, 0, PGSIZE);
+		  if(mem == 0){
+		    kfree(mem);
+		    p->killed = 1;
+		  }
+		  else{
+		    struct vma_t* v = &p->vma[vindex];
+		    int flag = PROT_NONE;
+		    int r;
+		    // read file contents
+		    ilock(v->f->ip);
+		    uint64 offset = PGROUNDDOWN(va) - v->addr + v->offset;
+		    uint64 n = min(PGSIZE, v->f->ip->size - offset);
+		    if((r=readi(v->f->ip, 0, (uint64)mem, offset, n)) < 0){
+			  p->killed = 1;
+		    }
+		    if(r!=n){
+			  printf("usertrap: mmap: readi r!=w\n");
+			  p->killed = 1;
+		    }
+		    iunlock(v->f->ip);
+		    if(v->prot & PROT_READ)
+		      flag |= PTE_R | PTE_U;
+		    if(v->prot & PROT_WRITE)
+		      flag |= PTE_W | PTE_U;
+		    if(v->prot & PROT_EXEC)
+		      flag |= PTE_X | PTE_U;
+		    if(mappages(p->pagetable, PGROUNDDOWN(va), PGSIZE, (uint64)mem, flag) != 0){
+			  printf("usertrap: mmap: mappages\n");
+		      kfree(mem);
+		      p->killed = 1;
+		    }
+		  }
+	  }
   } else {
     printf("usertrap(): unexpected scause %p pid=%d\n", r_scause(), p->pid);
     printf("            sepc=%p stval=%p\n", r_sepc(), r_stval());
