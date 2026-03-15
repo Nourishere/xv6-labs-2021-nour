@@ -131,3 +131,60 @@ sys_mmap(void)
   }
   return addr;
 }
+
+uint64
+sys_munmap(void)
+{
+  struct proc* p = myproc();
+  int length, vindex=-1, r;
+  uint64 addr;
+  if(argaddr(0,&addr) < 0 || argint(1,&length) < 0) return -1;
+
+  for(int i = 0; i <NOVMA; i++){
+	if(addr >= p->vma[i].addr && addr < p->vma[i].addr + p->vma[i].len){
+	  vindex = i;
+	  break;
+	}
+  }
+  if(vindex < 0)
+	return -1;
+  struct vma_t* v = &p->vma[vindex];
+  // write back in the case of a shared mapping
+  if(v->flags & MAP_SHARED){
+	if(walkaddr(p->pagetable, PGROUNDDOWN(addr)) == 0){
+		// page was never faulted in, skip writeback
+	} else{
+		begin_op();
+		ilock(v->f->ip);
+		uint64 offset = PGROUNDDOWN(addr) - v->addr + v->offset;
+		uint64 n = min(length, v->f->ip->size - offset);
+		if ((r = writei(v->f->ip, 1, PGROUNDDOWN(addr), offset, n)) < 0){
+		  iunlock(v->f->ip);
+		  return -1;
+		}
+		iunlock(v->f->ip);
+		end_op();
+		if(r != n){
+		  // error from writei
+		  return -1;
+		}
+	  }
+  }
+
+  uvmunmap(p->pagetable, addr, PGROUNDUP(length)/PGSIZE, 1);
+  // unmap the whole thing
+  if(addr == v->addr && length == v->len){
+	v->used = 0;
+	fileclose(v->f);
+  }
+  // unmap some not all
+  else if(addr == v->addr && length < v->len){
+	v->len -= length;
+	v->addr += PGROUNDUP(length);
+  }
+  // unmap from the end
+  else if(addr > v->addr && (addr+length == v->addr+v->len))
+	v->len -= length;
+
+  return 0;
+}
