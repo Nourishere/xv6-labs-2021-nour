@@ -124,12 +124,39 @@ e1000_transmit(struct mbuf *m)
 static void
 e1000_recv(void)
 {
-  //
-  // Your code here.
-  //
-  // Check for packets that have arrived from the e1000
-  // Create and deliver an mbuf for each packet (using net_rx()).
-  //
+  struct rx_desc* descriptor;
+  struct mbuf* m;
+  acquire(&e1000_lock);
+  uint16 index = (regs[E1000_RDT]+1)%RX_RING_SIZE;
+
+  while(1){ // multiple packets might be waiting
+	descriptor = &rx_ring[index];
+	// check if packet is ready
+	if(!(descriptor->status & E1000_RXD_STAT_DD)){
+	  release(&e1000_lock);
+	  return;
+	}
+	m = rx_mbufs[index];
+	descriptor->addr = (uint64)m->head;
+	// update the mbuf length
+	m->len = descriptor->length;
+
+	// deliever the packet to the upper stack
+	release(&e1000_lock);
+	net_rx(m);
+	acquire(&e1000_lock);
+	// can't clean old mbuf yet since it's used in the upper stack
+	m = mbufalloc(MBUF_DEFAULT_HEADROOM);
+	if(m==0)
+		panic("e1000_recv: mbufalloc\n");
+	rx_mbufs[index] = m;
+	descriptor->addr = (uint64)m->head;
+	descriptor->status = 0x00;
+
+	// update ring descriptor tail (RDT)
+	regs[E1000_RDT] = index;
+	index = (index+1)%RX_RING_SIZE;
+  }
 }
 
 void
