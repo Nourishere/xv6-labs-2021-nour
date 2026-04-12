@@ -111,11 +111,14 @@ e1000_transmit(struct mbuf *m)
 
   descriptor->addr = (uint64)m->head;
   descriptor->length = m->len;
-  //descriptor->cmd = 0b10011001;
   descriptor->cmd = E1000_TXD_CMD_EOP |
                       E1000_TXD_CMD_RS;
   // store the current mbuf into the tx_mbuf for later freeing
   tx_mbufs[index] = m;
+
+  // compiler shouldn't reorder, so we put a fence
+  __sync_synchronize();
+
   regs[E1000_TDT] = (index+1)%TX_RING_SIZE;
   release(&e1000_lock);
   return 0;
@@ -152,6 +155,9 @@ e1000_recv(void)
 	rx_mbufs[index] = m;
 	descriptor->addr = (uint64)m->head;
 	descriptor->status = 0x00;
+
+	// compiler shouldn't reorder, so we put a fence
+	__sync_synchronize();
 
 	// update ring descriptor tail (RDT)
 	regs[E1000_RDT] = index;
